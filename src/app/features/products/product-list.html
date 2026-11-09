@@ -1,0 +1,146 @@
+<header class="page-header">
+  <div>
+    <h1>Products</h1>
+    <p class="page-subtitle">Manage your catalog, prices and stock levels.</p>
+  </div>
+  @if (auth.isAdmin()) {
+    <button type="button" class="btn btn-primary" (click)="openCreate()"><om-icon name="plus" /> New product</button>
+  }
+</header>
+
+@if (!auth.isAdmin()) {
+  <div class="banner banner-info">
+    <om-icon name="lock" />
+    <div><strong>View only.</strong> You can browse products and stock, but only admins can add or change them.</div>
+  </div>
+}
+
+<div class="card table-card">
+  <div class="toolbar">
+    <label class="search-box">
+      <om-icon name="search" [size]="16" />
+      <input type="search" placeholder="Search name or SKU" [ngModel]="search()" (ngModelChange)="search.set($event)" aria-label="Search products" />
+    </label>
+    <label class="switch">
+      <input type="checkbox" [ngModel]="showInactive()" (ngModelChange)="toggleInactive($event)" />
+      <span class="switch-track"></span>
+      Show inactive
+    </label>
+    <span class="toolbar-meta">
+      {{ filtered().length }} products
+      @if (lowStockCount() > 0) { · <span class="text-danger">{{ lowStockCount() }} low on stock</span> }
+    </span>
+  </div>
+
+  @if (loading()) {
+    <om-skeleton-rows [rows]="5" />
+  } @else if (filtered().length === 0) {
+    @if (search()) {
+      <om-empty-state icon="search" title="No products match" [message]="'Nothing found for “' + search() + '”.'" />
+    } @else {
+      <om-empty-state icon="products" title="No products yet" message="Add your first product to start taking orders.">
+        @if (auth.isAdmin()) {
+          <button type="button" class="btn btn-primary btn-sm" (click)="openCreate()"><om-icon name="plus" [size]="16" /> Add product</button>
+        }
+      </om-empty-state>
+    }
+  } @else {
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th class="right">Price</th>
+            <th>Stock</th>
+            <th>Status</th>
+            @if (auth.isAdmin()) { <th class="right"><span class="sr-only">Actions</span></th> }
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of filtered(); track p.id) {
+            <tr [class.row-muted]="!p.isActive">
+              <td>
+                <span class="cell-main">{{ p.name }}</span>
+                <span class="cell-sub">{{ p.sku }}</span>
+              </td>
+              <td class="right num strong">{{ p.price | currency: 'EUR' }}</td>
+              <td><om-stock [quantity]="p.stockQuantity" /></td>
+              <td>
+                <span class="state" [class.state-on]="p.isActive"><span class="state-dot"></span>{{ p.isActive ? 'Active' : 'Inactive' }}</span>
+              </td>
+              @if (auth.isAdmin()) {
+              <td class="right">
+                <div class="row-actions">
+                  <button type="button" class="icon-btn" (click)="openEdit(p)" [attr.aria-label]="'Edit ' + p.name" title="Edit"><om-icon name="edit" [size]="16" /></button>
+                  @if (p.isActive) {
+                    <button type="button" class="icon-btn icon-btn-danger" (click)="deactivate(p)" [attr.aria-label]="'Deactivate ' + p.name" title="Deactivate"><om-icon name="archive" [size]="16" /></button>
+                  }
+                </div>
+              </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+@if (editingId() !== null) {
+  <div class="overlay" (click)="close()"></div>
+  <form class="drawer" [formGroup]="form" (ngSubmit)="save()" role="dialog" aria-modal="true" aria-labelledby="product-drawer-title">
+    <div class="drawer-header">
+      <div>
+        <h2 id="product-drawer-title">{{ editingId() ? 'Edit product' : 'New product' }}</h2>
+        <p class="card-subtitle">{{ editingId() ? 'Update details, price or stock.' : 'Add a product to your catalog.' }}</p>
+      </div>
+      <button type="button" class="icon-btn" (click)="close()" aria-label="Close"><om-icon name="close" /></button>
+    </div>
+
+    <div class="drawer-body">
+      @if (errors().length) {
+        <div class="banner banner-danger" role="alert">
+          <om-icon name="alert" />
+          <div>@for (e of errors(); track $index) { <div>{{ e }}</div> }</div>
+        </div>
+      }
+
+      <label class="field">
+        <span class="field-label">Name</span>
+        <input formControlName="name" placeholder="e.g. Wireless Mouse" />
+        @if (showError('name')) { <small class="field-error">Name is required.</small> }
+      </label>
+      <label class="field">
+        <span class="field-label">SKU</span>
+        <input formControlName="sku" placeholder="e.g. WM-002" />
+        @if (showError('sku')) { <small class="field-error">SKU is required.</small> } @else { <small class="field-hint">Unique product code. Saved in uppercase.</small> }
+      </label>
+      <div class="field-row">
+        <label class="field">
+          <span class="field-label">Price</span>
+          <span class="input-affix"><span class="affix">€</span><input type="number" step="0.01" min="0.01" formControlName="price" /></span>
+          @if (showError('price')) { <small class="field-error">Must be at least 0.01.</small> }
+        </label>
+        <label class="field">
+          <span class="field-label">Stock</span>
+          <input type="number" min="0" formControlName="stockQuantity" />
+          @if (showError('stockQuantity')) { <small class="field-error">Can't be negative.</small> }
+        </label>
+      </div>
+      <label class="field">
+        <span class="field-label">Description <span class="optional">optional</span></span>
+        <textarea rows="4" formControlName="description"></textarea>
+      </label>
+      <label class="switch">
+        <input type="checkbox" formControlName="isActive" />
+        <span class="switch-track"></span>
+        Available for new orders
+      </label>
+    </div>
+
+    <div class="drawer-footer">
+      <button type="button" class="btn btn-secondary" (click)="close()">Cancel</button>
+      <button type="submit" class="btn btn-primary" [disabled]="saving()">{{ saving() ? 'Saving…' : 'Save product' }}</button>
+    </div>
+  </form>
+}

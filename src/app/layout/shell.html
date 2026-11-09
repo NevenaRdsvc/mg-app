@@ -1,0 +1,40 @@
+<div class="layout">
+  <aside class="sidebar">
+    <a class="brand" routerLink="/dashboard">
+      <span class="brand-mark">OM</span>
+      <span class="brand-text">
+        <span class="brand-name">Order Management</span>
+        <span class="brand-sub">Admin console</span>
+      </span>
+    </a>
+
+    <nav class="nav" aria-label="Main">
+      <span class="nav-section">Menu</span>
+      @for (item of navItems; track item.path) {
+        <a class="nav-link" [routerLink]="item.path" routerLinkActive="active" ariaCurrentWhenActive="page">
+          <om-icon [name]="item.icon" />
+          <span>{{ item.label }}</span>
+        </a>
+      }
+    </nav>
+
+    <div class="user-card">
+      <om-avatar [name]="auth.fullName()" [seed]="auth.user()?.id ?? 0" />
+      <span class="user-text">
+        <strong>{{ auth.fullName() }}</strong>
+        <small>{{ auth.isAdmin() ? 'Administrator' : 'Staff' }}</small>
+      </span>
+      <button type="button" class="icon-btn logout-btn" (click)="auth.logout()" aria-label="Sign out" title="Sign out">
+        <om-icon name="logout" [size]="18" />
+      </button>
+    </div>
+  </aside>
+
+  <main class="content">
+    <router-outlet />
+  </main>
+</div>
+
+@if (orderDialog.isOpen()) {
+  <om-order-create-dialog />
+}

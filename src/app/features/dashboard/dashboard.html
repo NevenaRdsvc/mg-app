@@ -1,0 +1,139 @@
+<header class="page-header">
+  <div>
+    <p class="eyebrow">{{ today | date: 'EEEE, d MMMM' }}</p>
+    <h1>{{ greeting }}, {{ auth.user()?.firstName }} 👋</h1>
+    <p class="page-subtitle">Here's what's happening with your orders today.</p>
+  </div>
+  <button type="button" class="btn btn-primary" (click)="orderDialog.open()"><om-icon name="plus" /> New order</button>
+</header>
+
+<section class="kpi-grid" aria-label="Key figures">
+  @if (loading()) {
+    @for (i of [1, 2, 3, 4]; track i) {
+      <div class="card kpi"><span class="skeleton skeleton-line" style="width: 60%"></span><span class="skeleton skeleton-title"></span></div>
+    }
+  } @else {
+    @for (kpi of kpis(); track kpi.label) {
+      <a class="card kpi kpi-link" routerLink="/orders" [queryParams]="kpi.status ? { status: kpi.status } : {}">
+        <div class="kpi-top">
+          <span class="kpi-label">{{ kpi.label }}</span>
+          <span [class]="'kpi-icon tone-' + kpi.tone"><om-icon [name]="kpi.icon" /></span>
+        </div>
+        <span class="kpi-value">{{ kpi.value }}</span>
+        <span class="kpi-hint">{{ kpi.hint }}</span>
+      </a>
+    }
+  }
+</section>
+
+@if (!loading() && segments().length) {
+  <section class="card section">
+    <div class="card-header">
+      <div>
+        <h2>Order pipeline</h2>
+        <p class="card-subtitle">Distribution of {{ total() }} orders by status</p>
+      </div>
+    </div>
+    <div class="pipeline-bar" role="img" aria-label="Orders by status">
+      @for (s of segments(); track s.status) {
+        @if (s.count > 0) {
+          <span [class]="'pipeline-segment seg-' + s.status.toLowerCase()" [style.width.%]="s.percent" [title]="s.status + ': ' + s.count"></span>
+        }
+      }
+    </div>
+    <div class="pipeline-legend">
+      @for (s of segments(); track s.status) {
+        <a class="legend-item" routerLink="/orders" [queryParams]="{ status: s.status }">
+          <span [class]="'legend-dot seg-' + s.status.toLowerCase()"></span>
+          {{ s.status }} <strong>{{ s.count }}</strong>
+        </a>
+      }
+    </div>
+  </section>
+}
+
+<div class="dashboard-grid">
+  <section class="card section">
+    <div class="card-header">
+      <div>
+        <h2>Recent orders</h2>
+        <p class="card-subtitle">Latest activity</p>
+      </div>
+      <a class="link-arrow" routerLink="/orders">View all <om-icon name="arrowRight" [size]="16" /></a>
+    </div>
+
+    @if (loading()) {
+      <om-skeleton-rows [rows]="4" />
+    } @else if (recentOrders().length === 0) {
+      <om-empty-state icon="orders" title="No orders yet" message="Create your first order to see it here.">
+        <button type="button" class="btn btn-primary btn-sm" (click)="orderDialog.open()"><om-icon name="plus" [size]="16" /> New order</button>
+      </om-empty-state>
+    } @else {
+      <ul class="list">
+        @for (order of recentOrders(); track order.id) {
+          <li>
+            <a class="list-row" [routerLink]="['/orders', order.id]">
+              <om-avatar [name]="order.customerName" [seed]="order.customerId" />
+              <span class="list-main">
+                <strong>{{ order.customerName }}</strong>
+                <small>{{ order.orderNumber }} · {{ order.createdAt | date: 'd MMM, HH:mm' }}</small>
+              </span>
+              <span class="list-amount">{{ order.totalAmount | currency: 'EUR' }}</span>
+              <om-status-badge [status]="order.status" />
+            </a>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
+  <div class="stack">
+    <section class="card section">
+      <div class="card-header">
+        <div>
+          <h2>Low stock</h2>
+          <p class="card-subtitle">Fewer than {{ lowStockThreshold }} units left</p>
+        </div>
+        <a class="link-arrow" routerLink="/products">Products <om-icon name="arrowRight" [size]="16" /></a>
+      </div>
+
+      @if (loading()) {
+        <om-skeleton-rows [rows]="3" />
+      } @else if (lowStock().length === 0) {
+        <om-empty-state icon="check" title="Stock looks healthy" message="All active products have enough units." />
+      } @else {
+        <ul class="list">
+          @for (product of lowStock(); track product.id) {
+            <li class="list-row static">
+              <span class="list-main">
+                <strong>{{ product.name }}</strong>
+                <small>{{ product.sku }}</small>
+              </span>
+              <om-stock [quantity]="product.stockQuantity" />
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <section class="card section">
+      <h2>Quick actions</h2>
+      <div class="quick-actions">
+        <button type="button" class="quick-action" (click)="orderDialog.open()">
+          <span class="kpi-icon tone-primary"><om-icon name="orders" /></span>
+          <span><strong>Create order</strong><small>Pick products for a customer</small></span>
+        </button>
+        @if (auth.isAdmin()) {
+          <a class="quick-action" routerLink="/products" [queryParams]="{ new: 1 }">
+            <span class="kpi-icon tone-success"><om-icon name="products" /></span>
+            <span><strong>Add product</strong><small>Extend your catalog</small></span>
+          </a>
+        }
+        <a class="quick-action" routerLink="/customers" [queryParams]="{ new: 1 }">
+          <span class="kpi-icon tone-info"><om-icon name="customers" /></span>
+          <span><strong>Add customer</strong><small>Register a new buyer</small></span>
+        </a>
+      </div>
+    </section>
+  </div>
+</div>

@@ -1,0 +1,13 @@
+# Netlify build settings (used automatically when the site is connected to this Git repo)
+[build]
+  command = "npm run build"
+  publish = "dist/order-management-app/browser"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Angular is a single page app: every route (/orders/14, /login...) must serve index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

@@ -1,0 +1,124 @@
+<header class="page-header">
+  <div>
+    <h1>Customers</h1>
+    <p class="page-subtitle">Everyone who has ordered or can order from you.</p>
+  </div>
+  <button type="button" class="btn btn-primary" (click)="openCreate()"><om-icon name="plus" /> New customer</button>
+</header>
+
+<div class="card table-card">
+  <div class="toolbar">
+    <label class="search-box search-wide">
+      <om-icon name="search" [size]="16" />
+      <input type="search" placeholder="Search by name or email" [value]="searchTerm()" (input)="onSearch($any($event.target).value)" aria-label="Search customers" />
+    </label>
+    <span class="toolbar-meta">{{ customers().length }} customers</span>
+  </div>
+
+  @if (loading()) {
+    <om-skeleton-rows [rows]="5" />
+  } @else if (customers().length === 0) {
+    @if (searchTerm()) {
+      <om-empty-state icon="search" title="No customers match" [message]="'Nothing found for “' + searchTerm() + '”.'" />
+    } @else {
+      <om-empty-state icon="customers" title="No customers yet" message="Add a customer before creating an order.">
+        <button type="button" class="btn btn-primary btn-sm" (click)="openCreate()"><om-icon name="plus" [size]="16" /> Add customer</button>
+      </om-empty-state>
+    }
+  } @else {
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Customer</th>
+            <th>Contact</th>
+            <th>Customer since</th>
+            <th class="right"><span class="sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of customers(); track c.id) {
+            <tr>
+              <td>
+                <span class="cell-person">
+                  <om-avatar [name]="c.firstName + ' ' + c.lastName" [seed]="c.id" />
+                  <span>
+                    <span class="cell-main">{{ c.firstName }} {{ c.lastName }}</span>
+                    <span class="cell-sub">{{ c.address || 'No address' }}</span>
+                  </span>
+                </span>
+              </td>
+              <td>
+                <a class="cell-main link" [href]="'mailto:' + c.email">{{ c.email }}</a>
+                <span class="cell-sub">{{ c.phone || 'No phone' }}</span>
+              </td>
+              <td class="muted">{{ c.createdAt | date: 'd MMM yyyy' }}</td>
+              <td class="right">
+                <div class="row-actions">
+                  <a class="btn btn-ghost btn-sm" routerLink="/orders" [queryParams]="{ customerId: c.id }">Orders</a>
+                  <button type="button" class="icon-btn" (click)="openEdit(c)" [attr.aria-label]="'Edit ' + c.firstName" title="Edit"><om-icon name="edit" [size]="16" /></button>
+                  @if (auth.isAdmin()) {
+                    <button type="button" class="icon-btn icon-btn-danger" (click)="remove(c)" [attr.aria-label]="'Delete ' + c.firstName" title="Delete"><om-icon name="trash" [size]="16" /></button>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+@if (editingId() !== null) {
+  <div class="overlay" (click)="close()"></div>
+  <form class="drawer" [formGroup]="form" (ngSubmit)="save()" role="dialog" aria-modal="true" aria-labelledby="customer-drawer-title">
+    <div class="drawer-header">
+      <div>
+        <h2 id="customer-drawer-title">{{ editingId() ? 'Edit customer' : 'New customer' }}</h2>
+        <p class="card-subtitle">{{ editingId() ? 'Update contact details.' : 'Register a new customer.' }}</p>
+      </div>
+      <button type="button" class="icon-btn" (click)="close()" aria-label="Close"><om-icon name="close" /></button>
+    </div>
+
+    <div class="drawer-body">
+      @if (errors().length) {
+        <div class="banner banner-danger" role="alert">
+          <om-icon name="alert" />
+          <div>@for (e of errors(); track $index) { <div>{{ e }}</div> }</div>
+        </div>
+      }
+
+      <div class="field-row">
+        <label class="field">
+          <span class="field-label">First name</span>
+          <input formControlName="firstName" autocomplete="given-name" />
+          @if (showError('firstName')) { <small class="field-error">Required.</small> }
+        </label>
+        <label class="field">
+          <span class="field-label">Last name</span>
+          <input formControlName="lastName" autocomplete="family-name" />
+          @if (showError('lastName')) { <small class="field-error">Required.</small> }
+        </label>
+      </div>
+      <label class="field">
+        <span class="field-label">Email</span>
+        <input type="email" formControlName="email" autocomplete="email" placeholder="name@example.com" />
+        @if (showError('email')) { <small class="field-error">Enter a valid email address.</small> }
+      </label>
+      <label class="field">
+        <span class="field-label">Phone <span class="optional">optional</span></span>
+        <input type="tel" formControlName="phone" autocomplete="tel" placeholder="+381 60 123 4567" />
+      </label>
+      <label class="field">
+        <span class="field-label">Address <span class="optional">optional</span></span>
+        <textarea rows="3" formControlName="address" autocomplete="street-address"></textarea>
+      </label>
+    </div>
+
+    <div class="drawer-footer">
+      <button type="button" class="btn btn-secondary" (click)="close()">Cancel</button>
+      <button type="submit" class="btn btn-primary" [disabled]="saving()">{{ saving() ? 'Saving…' : 'Save customer' }}</button>
+    </div>
+  </form>
+}

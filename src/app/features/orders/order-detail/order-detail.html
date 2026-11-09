@@ -1,0 +1,119 @@
+<a class="back-link" routerLink="/orders"><om-icon name="chevronLeft" [size]="16" /> Orders</a>
+
+@if (order(); as o) {
+  <header class="page-header">
+    <div>
+      <div class="title-row">
+        <h1>{{ o.orderNumber }}</h1>
+        <om-status-badge [status]="o.status" />
+      </div>
+      <p class="page-subtitle">
+        Placed {{ o.createdAt | date: 'd MMMM yyyy, HH:mm' }}
+        @if (o.modifiedAt) { · Updated {{ o.modifiedAt | date: 'd MMM, HH:mm' }} }
+      </p>
+    </div>
+    <div class="header-actions">
+      @if (canCancel()) {
+        <button type="button" class="btn btn-ghost btn-danger-text" [disabled]="saving()" (click)="cancel()">
+          <om-icon name="ban" [size]="16" /> Cancel order
+        </button>
+      }
+      @if (primaryNext(); as next) {
+        <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="changeStatus(next)">
+          {{ saving() ? 'Saving…' : actionLabel(next) }} <om-icon name="arrowRight" [size]="16" />
+        </button>
+      }
+    </div>
+  </header>
+
+  <section class="card section">
+    @if (isCancelled()) {
+      <div class="banner banner-danger">
+        <om-icon name="ban" />
+        <div><strong>This order was cancelled.</strong> Reserved stock has been returned to inventory.</div>
+      </div>
+    }
+    <ol class="stepper" [class.cancelled]="isCancelled()" aria-label="Order progress">
+      @for (step of steps; track step; let i = $index) {
+        <li [class]="'step step-' + stepState(i)" [attr.aria-current]="stepState(i) === 'current' ? 'step' : null">
+          <span class="step-marker">
+            @if (stepState(i) === 'done') { <om-icon name="check" [size]="14" /> } @else { {{ i + 1 }} }
+          </span>
+          <span class="step-label">{{ step }}</span>
+        </li>
+      }
+    </ol>
+  </section>
+
+  <div class="detail-grid">
+    <section class="card section">
+      <div class="card-header">
+        <div>
+          <h2>Items</h2>
+          <p class="card-subtitle">{{ itemCount() }} units · {{ o.items.length }} products</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th class="right">Qty</th>
+              <th class="right">Unit price</th>
+              <th class="right">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of o.items; track item.id) {
+              <tr>
+                <td>
+                  <span class="cell-main">{{ item.productName }}</span>
+                  <span class="cell-sub">{{ item.sku }}</span>
+                </td>
+                <td class="right num">× {{ item.quantity }}</td>
+                <td class="right num">{{ item.unitPrice | currency: 'EUR' }}</td>
+                <td class="right num strong">{{ item.lineTotal | currency: 'EUR' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="totals">
+        <div class="totals-row grand"><span>Total</span><span>{{ o.totalAmount | currency: 'EUR' }}</span></div>
+      </div>
+    </section>
+
+    <aside class="stack">
+      <section class="card section">
+        <h2>Customer</h2>
+        <div class="person">
+          <om-avatar [name]="o.customerName" [seed]="o.customerId" />
+          <div>
+            <strong>{{ o.customerName }}</strong>
+            <small class="muted">Customer #{{ o.customerId }}</small>
+          </div>
+        </div>
+        <a class="link-arrow" routerLink="/orders" [queryParams]="{ customerId: o.customerId }">
+          All orders from this customer <om-icon name="arrowRight" [size]="16" />
+        </a>
+      </section>
+
+      <section class="card section">
+        <h2>Note</h2>
+        @if (o.note) {
+          <p class="note">{{ o.note }}</p>
+        } @else {
+          <p class="muted">No note was added to this order.</p>
+        }
+      </section>
+    </aside>
+  </div>
+} @else if (notFound()) {
+  <div class="card">
+    <om-empty-state icon="alert" title="Order not found" message="It may have been removed or the link is wrong.">
+      <a class="btn btn-secondary btn-sm" routerLink="/orders">Back to orders</a>
+    </om-empty-state>
+  </div>
+} @else {
+  <div class="card section"><om-skeleton-rows [rows]="5" /></div>
+}

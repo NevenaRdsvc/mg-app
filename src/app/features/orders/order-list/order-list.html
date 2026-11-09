@@ -1,0 +1,102 @@
+<header class="page-header">
+  <div>
+    <h1>Orders</h1>
+    <p class="page-subtitle">Track and manage every order from placement to delivery.</p>
+  </div>
+  <button type="button" class="btn btn-primary" (click)="orderDialog.open()"><om-icon name="plus" /> New order</button>
+</header>
+
+<div class="tabs" role="tablist" aria-label="Filter by status">
+  <button type="button" role="tab" class="tab" [class.active]="status() === null" [attr.aria-selected]="status() === null" (click)="setStatus(null)">
+    All <span class="tab-count">{{ allCount() }}</span>
+  </button>
+  @for (s of statuses; track s) {
+    <button type="button" role="tab" class="tab" [class.active]="status() === s" [attr.aria-selected]="status() === s" (click)="setStatus(s)">
+      <span [class]="'legend-dot seg-' + s.toLowerCase()"></span>
+      {{ s }}
+      <span class="tab-count">{{ counts()?.[s] ?? 0 }}</span>
+    </button>
+  }
+</div>
+
+<div class="card table-card">
+  <div class="toolbar">
+    <label class="select-inline">
+      <om-icon name="customers" [size]="16" />
+      <select [ngModel]="customerId()" (ngModelChange)="setCustomer($event)" aria-label="Filter by customer">
+        <option [ngValue]="null">All customers</option>
+        @for (c of customers(); track c.id) {
+          <option [ngValue]="c.id">{{ c.firstName }} {{ c.lastName }}</option>
+        }
+      </select>
+    </label>
+    @if (hasFilters()) {
+      <button type="button" class="btn btn-ghost btn-sm" (click)="clearFilters()"><om-icon name="close" [size]="14" /> Clear filters</button>
+    }
+    <span class="toolbar-meta">{{ totalCount() }} {{ totalCount() === 1 ? 'order' : 'orders' }}</span>
+  </div>
+
+  @if (loading()) {
+    <om-skeleton-rows [rows]="6" />
+  } @else if (orders().length === 0) {
+    @if (hasFilters()) {
+      <om-empty-state icon="filterX" title="No matching orders" message="Try another status or customer.">
+        <button type="button" class="btn btn-secondary btn-sm" (click)="clearFilters()">Clear filters</button>
+      </om-empty-state>
+    } @else {
+      <om-empty-state icon="orders" title="No orders yet" message="Orders you create will show up here.">
+        <button type="button" class="btn btn-primary btn-sm" (click)="orderDialog.open()"><om-icon name="plus" [size]="16" /> Create first order</button>
+      </om-empty-state>
+    }
+  } @else {
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Order</th>
+            <th>Customer</th>
+            <th class="right">Items</th>
+            <th class="right">Total</th>
+            <th>Status</th>
+            <th class="col-icon"><span class="sr-only">Open</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (order of orders(); track order.id) {
+            <tr class="clickable" tabindex="0" (click)="open(order)" (keydown.enter)="open(order)">
+              <td>
+                <span class="cell-main">{{ order.orderNumber }}</span>
+                <span class="cell-sub">{{ order.createdAt | date: 'd MMM yyyy, HH:mm' }}</span>
+              </td>
+              <td>
+                <span class="cell-person">
+                  <om-avatar [name]="order.customerName" [seed]="order.customerId" size="sm" />
+                  {{ order.customerName }}
+                </span>
+              </td>
+              <td class="right num">{{ order.items.length }}</td>
+              <td class="right num strong">{{ order.totalAmount | currency: 'EUR' }}</td>
+              <td><om-status-badge [status]="order.status" /></td>
+              <td class="col-icon muted"><om-icon name="chevronRight" [size]="16" /></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination">
+      <span class="muted">Showing <strong>{{ rangeStart() }}–{{ rangeEnd() }}</strong> of {{ totalCount() }}</span>
+      @if (totalPages() > 1) {
+        <div class="pagination-buttons">
+          <button type="button" class="btn btn-secondary btn-sm" [disabled]="page() === 1" (click)="goToPage(page() - 1)">
+            <om-icon name="chevronLeft" [size]="16" /> Previous
+          </button>
+          <span class="page-indicator">{{ page() }} / {{ totalPages() }}</span>
+          <button type="button" class="btn btn-secondary btn-sm" [disabled]="page() === totalPages()" (click)="goToPage(page() + 1)">
+            Next <om-icon name="chevronRight" [size]="16" />
+          </button>
+        </div>
+      }
+    </div>
+  }
+</div>

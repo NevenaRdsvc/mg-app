@@ -1,0 +1,51 @@
+:root {
+  /* Surfaces */
+  --bg: #f6f7fb;
+  --surface: #ffffff;
+  --surface-muted: #f9fafb;
+  --border: #e6e8ef;
+  --border-strong: #d4d7e2;
+
+  /* Text */
+  --text: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #8a94a6;
+
+  /* Brand (indigo) */
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --primary-soft: #eef2ff;
+  --primary-ring: rgba(79, 70, 229, 0.22);
+
+  /* Feedback */
+  --success: #16a34a;
+  --success-soft: #ecfdf5;
+  --warning: #d97706;
+  --warning-soft: #fffbeb;
+  --info: #0284c7;
+  --info-soft: #f0f9ff;
+  --danger: #dc2626;
+  --danger-hover: #b91c1c;
+  --danger-soft: #fef2f2;
+
+  /* Order status colors */
+  --status-pending: #f59e0b;
+  --status-confirmed: #3b82f6;
+  --status-shipped: #8b5cf6;
+  --status-delivered: #22c55e;
+  --status-cancelled: #ef4444;
+
+  /* Sidebar */
+  --sidebar-bg: #0f172a;
+  --sidebar-text: #cbd5e1;
+  --sidebar-muted: #64748b;
+
+  /* Shape & depth */
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 20px 40px -12px rgba(15, 23, 42, 0.25);
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
